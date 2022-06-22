@@ -14,8 +14,10 @@ const $searchForm = $("#search-form");
 
 async function getShowsByTerm(term) {
   // ADD: Remove placeholder & make request to TVMaze search shows API.
-  $searchForm.val("");
-  const results = await axios.get(`http://api.tvmaze.com/search/shows?q=${term}`);
+$("#search-query").val("");
+const results = await axios.get(`http://api.tvmaze.com/search/shows?q=`, {
+  params:{q:term}});
+  console.log(results);
   console.log(results.data);
   return(results.data);
   // return [
@@ -45,26 +47,31 @@ function populateShows(shows) {
   $showsList.empty();
 
   for (let show of shows) {
-    const imgUrl = show.show.image.medium;
+    try {
+      var imgUrl = show.show.image.original;
+    } catch (error) {
+      imgUrl = 'https://bitsofco.de/content/images/2018/12/broken-1.png';
+    }
+    const id = show.show.id;
+    getEpisodesOfShow(id);
     const $show = $(
         `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
-           <img 
-              src="${imgUrl}" 
-              alt="Bletchly Circle San Francisco" 
-              class="w-25 mr-3">
+         <img class="card-img-top" src="${imgUrl}">
+          
            <div class="media-body">
              <h5 class="text-primary">${show.show.name}</h5>
              <div><small>${show.show.summary}</small></div>
-             <button class="btn btn-outline-light btn-sm Show-getEpisodes">
+             <button class="btn btn-outline-primary btn-sm">
                Episodes
              </button>
            </div>
          </div>  
        </div>
       `);
-
+    
     $showsList.append($show);  }
+    
 }
 
 
@@ -73,7 +80,8 @@ function populateShows(shows) {
  */
 
 async function searchForShowAndDisplay() {
-  const term = $("#searchForm-term").val();
+  const term = $("#search-query").val();
+  console.log(term);
   const shows = await getShowsByTerm(term);
 
   $episodesArea.hide();
@@ -90,8 +98,12 @@ $searchForm.on("submit", async function (evt) {
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+async function getEpisodesOfShow(id) { 
+  const results = await axios.get(`http://api.tvmaze.com/shows/${id}/episodes`)
+
+  return results.data;
+}
 
 /** Write a clear docstring for this function... */
 
-// function populateEpisodes(episodes) { }
+function populateEpisodes(episodes) { }
