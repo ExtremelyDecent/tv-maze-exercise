@@ -1,6 +1,7 @@
 "use strict";
 
 const $showsList = $("#shows-list");
+const $episodesList = $("#episodesList");
 const $episodesArea = $("#episodes-area");
 const $searchForm = $("#search-form");
 
@@ -53,17 +54,17 @@ function populateShows(shows) {
       imgUrl = 'https://bitsofco.de/content/images/2018/12/broken-1.png';
     }
     const id = show.show.id;
-    getEpisodesOfShow(id);
+    
     const $show = $(
-        `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
+        `<div data-show-id="${id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
          <img class="card-img-top" src="${imgUrl}">
           
            <div class="media-body">
              <h5 class="text-primary">${show.show.name}</h5>
              <div><small>${show.show.summary}</small></div>
-             <button class="btn btn-outline-primary btn-sm">
-               Episodes
+             <button class="btn btn-outline-primary btn-sm Show-getEpisodes"  >
+               Get Episodes
              </button>
            </div>
          </div>  
@@ -92,18 +93,50 @@ $searchForm.on("submit", async function (evt) {
   evt.preventDefault();
   await searchForShowAndDisplay();
 });
+$showsList.on("click", ".Show-getEpisodes", getEpisodesAndDisplay);
+
+  
+
 
 
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
+ async function getEpisodesOfShow(id) {
+  const response = await axios({
+    url: `http://api.tvmaze.com/shows/${id}/episodes`,
+    method: "GET",
+  });
 
-async function getEpisodesOfShow(id) { 
-  const results = await axios.get(`http://api.tvmaze.com/shows/${id}/episodes`)
-
-  return results.data;
+  return response.data.map(e => ({
+    id: e.id,
+    name: e.name,
+    season: e.season,
+    number: e.number,
+  }));
 }
 
-/** Write a clear docstring for this function... */
+async function getEpisodesAndDisplay(evt) {
+  const showId = $(evt.target).closest(".Show").data("show-id");
+  const episodes = await getEpisodesOfShow(showId);
+  console.log(episodes);
+  populateEpisodes(episodes);
+}
 
-function populateEpisodes(episodes) { }
+/**Iterate over episode in episodes and appends LI to dom. */
+
+function populateEpisodes(episodes) {
+  $episodesList.empty();
+  for (let episode of episodes) {
+    const $item = $(
+        `<li>
+         ${episode.name}
+         (season ${episode.season}, episode ${episode.number})
+       </li>
+      `);
+
+    $episodesList.append($item);
+  }
+
+  $episodesArea.show();
+}
